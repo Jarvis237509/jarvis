@@ -1,33 +1,39 @@
-# Mission Control - Agent Governance System
+# Mission Control — Agent Governance System
 
+[![Version](https://img.shields.io/badge/version-0.3.0-blue)]()
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)]()
-[![Coverage](https://img.shields.io/badge/coverage->80%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-%3E80%25-brightgreen)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
-Mission Control is a comprehensive governance system for AI agent orchestration, implementing L0/L1/L2 clearance-based action enforcement, immutable audit trails with cryptographic verification, and human-in-the-loop approval workflows for critical operations.
+> **Current Release: v0.3.0 (Governance Slice)** — PR #3 merged and production-ready
 
-## Features
+Mission Control is a comprehensive governance system for AI agent orchestration, implementing:
 
-### 🔐 L0/L1/L2 Clearance Enforcement
-- **L0 (Public)**: Read operations, status queries - no restrictions
-- **L1 (Standard)**: Configuration changes, service deployment - requires L1+ clearance
-- **L2 (Critical)**: Resource destruction, production changes, fund transfers - requires human approval
+- 🔐 **L0/L1/L2 Clearance Enforcement** — Risk-graded action authorization
+- 🔗 **Immutable Audit Trail** — Cryptographically-verified chain logging  
+- 👤 **Human-in-the-Loop Approval** — L2 action authorization workflows
 
-### 🔗 Immutable Audit Trail
-- Cryptographically chained entries with SHA-256 hashing
-- Tamper-evident logging with automatic integrity verification
-- Exportable JSON format for compliance and analysis
+---
 
-### 👤 Human-in-the-Loop Approval
-- Configurable approval workflows for L2 actions
-- Multiple approver support with unanimous or threshold-based approval
-- Emergency stop capability for security incidents
-
-## Installation
+## Quick Install
 
 ```bash
 npm install @missioncontrol/jarvis
 ```
+
+Requires Node.js >= 18.0.0
+
+---
+
+## Clearance Levels at a Glance
+
+| Level | Name | Operations | Requires Approval |
+|-------|------|------------|-------------------|
+| L0 | 🔓 Public | Read, query, list | No |
+| L1 | 🔑 Standard | Config, deploy, secrets | Agent L1+ clearance |
+| L2 | 🔒 Critical | Destroy, production, funds | Human authorization |
+
+---
 
 ## Quick Start
 
@@ -46,231 +52,301 @@ const mc = new MissionControl({
 
 // Register L2 approvers
 mc.registerApprover({
-  id: 'approver-1',
+  id: 'security-lead',
   name: 'Security Officer',
   clearanceLevel: ClearanceLevel.L2,
   email: 'security@example.com',
 });
 
-// Define agent identity
+// Define agent
 const agent = {
-  id: 'agent-001',
+  id: 'deploy-bot',
   name: 'Deployment Agent',
   clearanceLevel: ClearanceLevel.L1,
-  sessionId: 'session-abc',
+  sessionId: 'sess-abc',
 };
 
-// Execute L0 action (immediate)
+// L0 action — executes immediately
 const l0Result = await mc.execute(
-  ActionType.READ_PUBLIC,
+  ActionType.QUERY_STATUS,
   agent,
-  { resource: 'status' },
-  async (payload) => {
-    return { status: 'operational' };
-  }
+  { resource: 'api' },
+  async () => ({ status: 'operational' })
 );
 
-// Execute L1 action (immediate with logging)
+// L1 action — executes immediately (L1+ clearance verified)
 const l1Result = await mc.execute(
   ActionType.DEPLOY_SERVICE,
   agent,
   { service: 'api', version: '1.2.0' },
   async (payload) => {
-    // Deploy service...
+    // Deploy logic here
     return { deployed: true, id: 'svc-123' };
   }
 );
 
-// Execute L2 action (requires approval)
+// L2 action — pauses for human approval
 const l2Result = await mc.execute(
   ActionType.DESTROY_RESOURCE,
-  agent,  // L1 agent can't execute directly
+  agent,
   { resourceId: 'r-123', force: true },
-  async (payload) => {
-    // This won't execute until approved
-    return { destroyed: true };
-  }
+  async () => ({ destroyed: true })
 );
 
 if ('approvalPending' in l2Result) {
-  console.log(`Waiting for approval: ${l2Result.approvalId}`);
-  // Human approver calls: mc.approveAction(l2Result.approvalId, 'approver-1')
+  console.log(`⏳ Awaiting authorization: ${l2Result.approvalId}`);
+  // Human operator calls: mc.approveAction(l2Result.approvalId, 'approver-id')
 }
 ```
 
-## Action Types
+---
 
-### L0 Actions (Public)
-- `READ_PUBLIC` - Read public data
-- `QUERY_STATUS` - Query system status
-- `LIST_RESOURCES` - List available resources
+## Action Reference
 
-### L1 Actions (Standard)
-- `MODIFY_CONFIG` - Modify configuration
-- `DEPLOY_SERVICE` - Deploy services
-- `MANAGE_SECRETS` - Manage secrets (with L1)
-- `EXECUTE_COMMAND` - Execute standard commands
+### L0 — Public Access (🔓)
+| Action | Description |
+|--------|-------------|
+| `READ_PUBLIC` | Read public data |
+| `QUERY_STATUS` | Query system status |
+| `LIST_RESOURCES` | List available resources |
 
-### L2 Actions (Critical - Requires Approval)
-- `DESTROY_RESOURCE` - Destroy/delete resources
-- `MODIFY_PRODUCTION` - Modify production systems
-- `TRANSFER_FUNDS` - Transfer funds
-- `DELETE_AUDIT_LOG` - Delete audit entries
-- `ESCALATE_PRIVILEGES` - Escalate privileges
-- `EXECUTE_ARBITRARY` - Execute arbitrary code
+### L1 — Standard Operations (🔑)
+| Action | Description |
+|--------|-------------|
+| `MODIFY_CONFIG` | Modify configurations |
+| `DEPLOY_SERVICE` | Deploy services |
+| `MANAGE_SECRETS` | Manage secrets |
+| `EXECUTE_COMMAND` | Execute standard commands |
+
+### L2 — Critical Actions (🔒)
+| Action | Description |
+|--------|-------------|
+| `DESTROY_RESOURCE` | Destroy/delete resources |
+| `MODIFY_PRODUCTION` | Modify production systems |
+| `TRANSFER_FUNDS` | Transfer funds |
+| `DELETE_AUDIT_LOG` | Delete audit entries |
+| `ESCALATE_PRIVILEGES` | Escalate privileges |
+| `EXECUTE_ARBITRARY` | Execute arbitrary code |
+
+---
 
 ## Clearance Hierarchy
 
 ```
-L2 (Critical)
-  └─ Can execute: L2, L1, L0
-  └─ Requires human approval for L2
+L2 (Critical) 🔒
+  ├─ Can execute: L2, L1, L0
+  ├─ Can approve L2 requests
+  └─ Requires human authorization for L2 actions
 
-L1 (Standard)
-  └─ Can execute: L1, L0
+L1 (Standard) 🔑
+  ├─ Can execute: L1, L0
   └─ Cannot execute L2
 
-L0 (Public)
+L0 (Public) 🔓
   └─ Can execute: L0 only
-  └─ Cannot execute L1, L2
 ```
 
-## Approval Workflow
+---
 
-### Single Approver
+## Approval Status Guide
+
+| Status | Display | Operator Action |
+|--------|---------|-----------------|
+| `PENDING` | ⏳ **Awaiting Approval** | Review request in queue |
+| `APPROVED` | ✅ **Authorized** | Action will execute immediately |
+| `REJECTED` | ❌ **Denied** | Action blocked, review rejection reason |
+| `EXPIRED` | ⏰ **Timed Out** | Approval window closed, resubmit if needed |
+| `REVOKED` | 🚫 **Revoked** | Previously approved action was emergency-cancelled |
+
+---
+
+## Approval Workflows
+
+### Single Authorization (Default)
 ```typescript
-const workflow = new ApprovalWorkflow(config, {
-  minApprovers: 1,
-  requireUnanimous: false,
-});
+minApprovers: 1
+requireUnanimous: false
+```
+**For:** Standard deployments, routine maintenance
+
+### Dual Authorization
+```typescript
+minApprovers: 2
+requireUnanimous: false
+```
+**For:** Production changes, sensitive operations
+
+### Unanimous Consent
+```typescript
+minApprovers: 3
+requireUnanimous: true
+```
+**For:** Destructive operations, policy changes
+
+---
+
+## Approval Actions
+
+### Check Pending Authorizations
+```typescript
+const pending = mc.getPendingApprovals();
+console.log(`${pending.length} actions awaiting approval`);
+// Status: PENDING (⏳)
 ```
 
-### Multiple Approvers (Threshold)
+### Approve with Documentation
 ```typescript
-const workflow = new ApprovalWorkflow(config, {
-  minApprovers: 2,
-  requireUnanimous: false,
-});
+const approval = await mc.approveAction(
+  'approval-id',
+  'security-lead',
+  signature,
+  'Approved per change request #1234'
+);
+console.log(`Status: ${approval.status}`); // APPROVED (✅)
 ```
 
-### Unanimous Approval
+### Reject with Reasoning
 ```typescript
-const workflow = new ApprovalWorkflow(config, {
-  minApprovers: 3,
-  requireUnanimous: true,
-});
+await mc.rejectAction(
+  'approval-id',
+  'security-lead',
+  'Rejected: Database migration conflicts with backup window'
+);
+// Status: REJECTED (❌)
 ```
+
+### Emergency Stop (All Pending Canceled)
+```typescript
+await mc.emergencyStop('Security incident - all pending actions suspended');
+// All pending approvals → REVOKED (🚫)
+```
+
+---
 
 ## Audit Trail
 
-### Verify Integrity
+### Verify Chain Integrity
 ```typescript
 const isValid = mc.verifyAuditIntegrity();
-console.log(`Audit chain valid: ${isValid}`);
+if (!isValid) {
+  console.error('🚨 CRITICAL: Audit tampering detected');
+}
 ```
 
 ### Export for Compliance
 ```typescript
 const auditJSON = mc.exportAuditTrail();
-// Save to file or send to compliance system
+// Exports: genesisHash, entryCount, chainValid, entries[]
 ```
 
-### Query Entries
+### Query Activity
 ```typescript
-const auditTrail = mc.getAuditTrail();
+const audit = mc.getAuditTrail();
 
 // By action type
-const destroyActions = auditTrail.getEntriesByActionType(ActionType.DESTROY_RESOURCE);
+const destroys = audit.getEntriesByActionType(ActionType.DESTROY_RESOURCE);
 
 // By agent
-const agentActions = auditTrail.getEntriesByAgent('agent-001');
+const agentActions = audit.getEntriesByAgent('deploy-bot');
 
 // By time range
-const recentActions = auditTrail.getEntriesByTimeRange(
+const recent = audit.getEntriesByTimeRange(
   new Date(Date.now() - 24 * 60 * 60 * 1000),
   new Date()
 );
 ```
 
+---
+
 ## Event Monitoring
 
 ```typescript
 mc.onEvent(GovernanceEventType.ACTION_EXECUTED, (event) => {
-  console.log(`Action executed: ${event.payload.actionId}`);
+  console.log(`✅ ${event.payload.actionId} completed`);
+});
+
+mc.onEvent(GovernanceEventType.ACTION_APPROVED, (event) => {
+  console.log(`✅ ${event.payload.approvalId} authorized`);
 });
 
 mc.onEvent(GovernanceEventType.CLEARANCE_VIOLATION, (event) => {
   // Alert security team
-  alertSecurity(event);
 });
 
 mc.onEvent(GovernanceEventType.AUDIT_TAMPER_DETECTED, (event) => {
-  // Critical: Audit chain compromised
+  // 🚨 Immediate escalation required
   emergencyShutdown();
 });
 ```
 
-## Emergency Stop
+**Severity Levels:**
+- `info` ℹ️ — Routine operations (no paging)
+- `warning` ⚠️ — Approval timeouts, recoverable failures (business hours)
+- `critical` 🚨 — Audit tampering, security violations (immediately)
 
-```typescript
-// In case of security incident
-await mc.emergencyStop('Security breach detected - all pending approvals revoked');
-```
+---
 
-## Configuration
+## Configuration Reference
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `l2ApprovalTimeoutMs` | number | 300000 | Timeout for L2 approval (ms) |
-| `requiredApprovers` | number | 1 | Default required approvers |
-| `autoRejectOnTimeout` | boolean | true | Auto-reject expired approvals |
-| `auditRetentionDays` | number | 365 | Audit retention period |
-| `hashAlgorithm` | string | 'SHA-256' | Hash algorithm for chain |
-| `enableImmutableAudit` | boolean | true | Enable audit immutability |
+| `l2ApprovalTimeoutMs` | number | `300000` | Approval window (ms) |
+| `requiredApprovers` | number | `1` | Default approvers required |
+| `autoRejectOnTimeout` | boolean | `true` | Auto-cancel expired requests |
+| `auditRetentionDays` | number | `365` | Audit retention period |
+| `hashAlgorithm` | string | `'SHA-256'` | Chain hashing algorithm |
+| `enableImmutableAudit` | boolean | `true` | Enable chain verification |
 
-## API Reference
+---
 
-### MissionControl
-- `execute(actionType, agent, payload, executor)` - Execute action with governance
-- `approveAction(approvalId, approverId)` - Approve pending L2 action
-- `rejectAction(approvalId, approverId, reason)` - Reject pending action
-- `registerApprover(approver)` - Register L2 approver
-- `getPendingApprovals()` - Get all pending approvals
-- `verifyAuditIntegrity()` - Verify audit chain
-- `exportAuditTrail()` - Export audit as JSON
-- `emergencyStop(reason)` - Revoke all pending approvals
-
-### AuditTrail
-- `record(request, result, agent, approval?)` - Record audit entry
-- `verifyChain()` - Verify chain integrity
-- `getEntry(id)` - Get entry by ID
-- `getAllEntries()` - Get all entries
-- `getEntriesByActionType(type)` - Filter by action type
-- `getEntriesByAgent(agentId)` - Filter by agent
-- `getEntriesByTimeRange(start, end)` - Filter by time
-
-### ApprovalWorkflow
-- `submitForApproval(action, requester)` - Submit for approval
-- `approve(approvalId, approverId)` - Approve request
-- `reject(approvalId, approverId, reason)` - Reject request
-- `revoke(approvalId, by, reason)` - Revoke approved request
-- `registerApprover(approver)` - Register approver
-
-## Testing
+## Test & Build
 
 ```bash
 # Run all tests
 npm test
 
-# Run with coverage
+# Coverage report
 npm run test:coverage
 
-# Type checking
+# Type check
 npm run typecheck
 
-# Linting
+# Lint
 npm run lint
 ```
+
+---
+
+## Release v0.3.0: Governance Slice (PR #3)
+
+### What's New
+- ✅ L0/L1/L2 clearance enforcement hooks
+- ✅ L2 human-in-the-loop approval system
+- ✅ Immutable SHA-256 audit trail
+- ✅ Mission Control orchestrator
+- ✅ Comprehensive test suite (>80% coverage)
+- ✅ CI/CD pipeline via GitHub Actions
+
+### Status
+- **Merged:** 2026-02-19
+- **Stability:** Production-ready
+- **Breaking Changes:** None (additive only)
+
+### Known Limitations
+- Notifications logged to console (email/Slack integration pending)
+- MFA for approvers requires external integration
+- Escalation timeout fixed at 5 minutes
+
+---
+
+## Documentation
+
+- [Operator Guide](./docs/OPERATORS.md) — Human-readable operations reference
+- [API Reference](./docs/API.md) — Complete API documentation
+- [Deployment Checklist](./docs/DEPLOYMENT.md) — Production deployment guide
+- [Changelog](./CHANGELOG.md) — Version history
+
+---
 
 ## Architecture
 
@@ -283,13 +359,15 @@ npm run lint
     ┌────┴────┬─────────────┐
     ▼         ▼             ▼
 ┌────────┐ ┌──────────┐ ┌───────────┐
-│Enforce-│ │  Audit   │ │ Approval  │
-│  ment  │ │  Trail   │ │  Workflow │
-│ Engine │ │(Immutable│ │ (Human-in-│
-│(L0/L1/ │ │  Chain)  │ │ the-loop) │
-│  L2)   │ │          │ │           │
+│L0/L1/  │ │  Audit   │ │ Approval  │
+│  L2    │ │  Trail   │ │ Workflow │
+│Enforce-│ │(Immutable│ │ (Human-in-│
+│  ment  │ │  Chain)  │ │ the-loop) │
+│ Engine │ │          │ │           │
 └────────┘ └──────────┘ └───────────┘
 ```
+
+---
 
 ## License
 
